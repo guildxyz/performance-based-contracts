@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body onload="init()">
+    <div id="form">
+      <div id="inputs">
+        <div class="input-row">
+          <label for="youtube-url">Video URL</label>
+          <input id="youtube-url" />
+        </div>
+        <div class="input-row">
+          <label for="view-count">Viewcount</label>
+          <input id="view-count" />
+        </div>
+        <div class="input-row">
+          <label for="lock-time">Lock time</label>
+          <input id="lock-time" />
+        </div>
+        <div class="input-row">
+          <label for="money-amount">Amount to pay</label>
+          <input id="money-amount" />
+        </div>
+        <div class="input-row">
+          <label for="beneficiary-address">Address of video owner</label>
+          <input id="beneficiary-address" />
+        </div>
+      </div>
+      <div id="buttons">
+        <button id="deposit" onclick="deposit()">Deposit</button>
+        <button id="update" onclick="request()">Update</button>
+        <button id="withdraw" onclick="withdraw()">Withdraw</button>
+      </div>
+    </div>
+  </body>
+
+  <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js"></script>
+  <script src="script.js"></script>
+</html>
