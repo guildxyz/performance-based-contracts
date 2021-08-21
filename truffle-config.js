@@ -18,7 +18,7 @@
  *
  */
 const HDWalletProvider = require("@truffle/hdwallet-provider");
-const config = require("./.secrets.js");
+require("dotenv").config();
 
 module.exports = {
   /**
@@ -35,8 +35,8 @@ module.exports = {
     goerli: {
       provider: () =>
         new HDWalletProvider({
-          mnemonic: config.MNEMONICS,
-          providerOrUrl: `wss://goerli.infura.io/ws/v3/${config.INFURA_API_KEY}`,
+          mnemonic: process.env.MNEMONICS,
+          providerOrUrl: `wss://goerli.infura.io/ws/v3/${process.env.INFURA_API_KEY}`,
           chainId: 5
         }),
       network_id: 5,
@@ -62,6 +62,6 @@ module.exports = {
 
   // This is just for the `truffle-plugin-verify` to catch the API key
   api_keys: {
-    etherscan: config.ETHERSCAN_API
+    etherscan: process.env.ETHERSCAN_API
   }
 };

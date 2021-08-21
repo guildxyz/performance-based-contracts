@@ -10,7 +10,7 @@
     "compile": "npm run postinstall && npm run compile-contracts",
     "compile-contracts": "npx truffle compile",
     "flatten": " mkdir contracts/flattened/ 2>/dev/null; npx truffle-flattener contracts/Monetizer.sol > contracts/flattened/Flattened.sol",
-    "migrate": "npx truffle migrate --reset --network=goerli Monetizer && npm run verify-flattened",
+    "migrate": "npx truffle migrate --reset --network=goerli Monetizer && npm run verify",
     "verify": "npx truffle run verify --network goerli Monetizer",
     "host": "npm run copy-needed && npx live-server src",
     "copy-needed": "cp build/contracts/ViewCountOracle.json src && cp build/contracts/Monetizer.json src"

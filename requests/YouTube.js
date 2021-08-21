@@ -1,15 +1,10 @@
 import * as Witnet from "witnet-requests";
 
-const YOUTUBE_API_KEY = "AIzaSyAq9M2xPLVHLzczrFgSTha7MWJ8LBoHnJI";
-
 const youtube = new Witnet.Source(
-  `https://youtube.googleapis.com/youtube/v3/videos?part=snippet%2C%20statistics&id=xxx&key=${YOUTUBE_API_KEY}`
+  "https://api-middlewares.vercel.app/api/youtube/{ID}"
 )
   .parseJSONMap()
-  .getArray("items")
-  .getMap(0)
-  .getMap("statistics")
-  .getString("viewCount")
+  .getString("views")
   .asInteger();
 
 // Filters out any value that is more than 1.5 times the standard
