@@ -2,11 +2,26 @@ let viewCountAbi;
 let monetizer;
 let signer;
 let account;
+let localStorage;
 
+// Address of the YouTube monetizer contract
 const ADDRESS = "0xABc1c76bD7d16cF69B9c04B78C9c133ecD493a15";
 
 // Load artifacts
 const init = async () => {
+  localStorage = window.localStorage;
+
+  const _video = localStorage.getItem("current");
+  const video = _video !== null ? JSON.parse(_video) : {};
+
+  if (video.lockTime !== undefined) {
+    setValue("youtube-url", `https://www.youtube.com/watch?v=${video.videoId}`);
+    setValue("lock-time", video.lockTime);
+    setValue("view-count", video.viewCount);
+    setValue("money-amount", video.moneyAmount);
+    setValue("beneficiary-address", video.beneficiaryAddress);
+  }
+
   if (typeof window.ethereum === "undefined") {
     alert("MetaMask is not installed!");
     throw new Error("MetaMask is not installed!");
@@ -47,10 +62,11 @@ const parseUrl = (url) => {
 // Helper function for getting value of input fields
 const parseInput = (id) => document.getElementById(id).value;
 
+const setValue = (id, value) => (document.getElementById(id).value = value);
+
 const deposit = async () => {
   try {
-
-    var x = new XMLHttpRequest();
+    let x = new XMLHttpRequest();
     x.open(
       "GET",
       "https://cors-anywhere.herokuapp.com/" +
@@ -73,6 +89,9 @@ const deposit = async () => {
       beneficiaryAddress :          parseInput("beneficiary-address"),
     }
 
+    localStorage.setItem("current", JSON.stringify(video));
+    localStorage.setItem("current-timestamp", new Date().getTime());
+
     await monetizer.deposit(
       video.videoId,
       video.beneficiaryAddress,
@@ -89,6 +108,7 @@ const deposit = async () => {
   }
 };
 
+// Send an update request to the Witnet oracle
 const request = async () => {
   try {
     const contract = new ethers.Contract(
@@ -116,10 +136,21 @@ const request = async () => {
   }
 };
 
+// Withdraw the deposited money
 const withdraw = async () => {
   try {
     await monetizer.withdraw(parseUrl(parseInput("youtube-url")));
   } catch (e) {
     alert(e);
   }
+};
+
+const clearData = async () => {
+  setValue("youtube-url", "");
+  setValue("lock-time", "");
+  setValue("view-count", "");
+  setValue("money-amount", "");
+  setValue("beneficiary-address", "");
+
+  localStorage.removeItem("current");
 };
