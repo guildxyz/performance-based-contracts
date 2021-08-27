@@ -14,7 +14,7 @@ contract Monetizer is UsingWitnet {
   struct Video {
     bool            notEmpty;
     string          id;
-    address depositor;
+    address         depositor;
     address payable beneficiary;
     uint256         lockTime;
     uint256         targetViewCount;

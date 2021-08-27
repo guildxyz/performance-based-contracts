@@ -38,14 +38,14 @@ contract("Monetizer", (accounts) => {
       await monetizer.deposit(videoId, beneficiary, lockTime, lowTargetViewCount, {
         from: depositor,
         value: reward,
-        gasPrice
+        gasPrice,
       })
     })
 
     it("should not allow deposits for an already known video ID", async () => {
       await expectRevert(
         monetizer.deposit(videoId, beneficiary, lockTime, lowTargetViewCount, {
-          from: anonymous
+          from: anonymous,
         }),
         "Monetizer: there was already a deposit for this video"
       )
@@ -92,7 +92,7 @@ contract("Monetizer", (accounts) => {
       await monetizer.checkViews(videoId, {
         from: depositor,
         value: witnetFee,
-        gasPrice
+        gasPrice,
       })
     })
 
@@ -150,7 +150,7 @@ contract("Monetizer", (accounts) => {
       await monetizer.deposit(videoId, beneficiary, lockTime, highTargetViewCount, {
         from: depositor,
         value: reward,
-        gasPrice
+        gasPrice,
       })
     })
 
@@ -159,7 +159,7 @@ contract("Monetizer", (accounts) => {
       await monetizer.checkViews(videoId, {
         from: depositor,
         value: witnetFee,
-        gasPrice
+        gasPrice,
       })
 
       await wrb.reportResult(2, "0x0000000000000000000000000000000000000000000000000000000000000002", "0x194E20")
@@ -181,6 +181,5 @@ contract("Monetizer", (accounts) => {
         "monetizer has kept some balance for itself after refunding the reward"
       )
     })
-
   })
 })

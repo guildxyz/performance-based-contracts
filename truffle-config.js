@@ -17,8 +17,8 @@
  * phrase from a file you've .gitignored so it doesn't accidentally become public.
  *
  */
-const HDWalletProvider = require("@truffle/hdwallet-provider");
-require("dotenv").config();
+const HDWalletProvider = require("@truffle/hdwallet-provider")
+require("dotenv").config()
 
 module.exports = {
   /**
@@ -41,23 +41,23 @@ module.exports = {
         new HDWalletProvider({
           mnemonic: process.env.MNEMONICS,
           providerOrUrl: `wss://goerli.infura.io/ws/v3/${process.env.INFURA_API_KEY}`,
-          chainId: 5
+          chainId: 5,
         }),
       network_id: 5,
       gas: 3000000, // Goerli has a lower block limit than mainnet
       confirmations: 1, // # of confs to wait between deployments. (default: 0)
       networkCheckTimeout: 90000, // Seems like the default value was not enough
       timeoutBlocks: 200, // # of blocks before a deployment times out  (minimum/default: 50)
-      skipDryRun: true // Skip dry run before migrations? (default: false for public nets )
-    }
+      skipDryRun: true, // Skip dry run before migrations? (default: false for public nets )
+    },
   },
 
   // The `solc` compiler is set to optimize output bytecode with 200 runs, which is the standard these days
   compilers: {
     solc: {
       version: "0.8.7",
-      settings: { optimizer: { enabled: true, runs: 200 } }
-    }
+      settings: { optimizer: { enabled: true, runs: 200 } },
+    },
   },
 
   // This plugin allows to verify the source code of your contracts on Etherscan with this command:
@@ -66,6 +66,6 @@ module.exports = {
 
   // This is just for the `truffle-plugin-verify` to catch the API key
   api_keys: {
-    etherscan: process.env.ETHERSCAN_API
-  }
-};
+    etherscan: process.env.ETHERSCAN_API,
+  },
+}
