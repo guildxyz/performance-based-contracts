@@ -6,14 +6,21 @@
   "license": "MIT",
   "private": false,
   "scripts": {
-    "postinstall": "mkdir -p build/contracts >/dev/null 2>&1; cp node_modules/witnet-ethereum-bridge/build/contracts/*.json build/contracts",
-    "compile": "npm run postinstall && npm run compile-contracts",
-    "compile-contracts": "npx truffle compile",
+    "clean": "node scripts/clean.js && npm run postinstall",
+    "compile": "npm run compile:requests && npm run compile:contracts",
+    "compile:requests": "npx rad2sol --disable-requests-lists",
+    "compile:contracts": "npx truffle compile",
+    "compile:flattened": "npx truffle compile --all --config flattened-config.js ",
     "flatten": " mkdir contracts/flattened/ 2>/dev/null; npx truffle-flattener contracts/Monetizer.sol > contracts/flattened/Flattened.sol",
-    "migrate": "npx truffle migrate --reset --network=goerli Monetizer && npm run verify",
+    "fmt": "solium -d contracts && eslint ./test",
+    "fmt!": "solium -d contracts --fix && eslint ./test --fix",
+    "migrate": "npx truffle migrate",
+    "migrate:flattened": "npm run flatten && npx truffle migrate --config flattened-config.js",
+    "postinstall": "node scripts/postinstall.js",
     "verify": "npx truffle run verify --network goerli Monetizer",
     "host": "npm run copy-needed && npx live-server src",
-    "copy-needed": "cp build/contracts/ViewCountOracle.json src && cp build/contracts/Monetizer.json src"
+    "test": "npx truffle test",
+    "try": "npm run compile:requests && npx witnet-toolkit try-data-request --from-solidity ./contracts/requests/"
   },
   "dependencies": {
     "@truffle/hdwallet-provider": "^1.4.0",
@@ -23,11 +30,13 @@
     "witnet-requests": "^0.5.0"
   },
   "devDependencies": {
+    "@openzeppelin/test-helpers": "^0.5.13",
     "dotenv": "^8.2.0",
     "eslint": "^7.28.0",
     "eslint-config-airbnb-base": "^14.2.1",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-import": "^2.23.4",
+    "ethlint": "^1.2.5",
     "husky": "^4.3.8",
     "lint-staged": "^11.0.0",
     "prettier": "^2.3.1",

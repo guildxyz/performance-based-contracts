@@ -30,8 +30,18 @@ module.exports = {
    *
    * $ truffle test --network <network-name>
    */
-  contracts_directory: "./contracts/flattened/",
+  contracts_directory: "./contracts/",
   networks: {
+    development: {
+      provider: require("ganache-cli").provider({ gasLimit: 100000000 }),
+      network_id: "*",
+    },
+    "ethereum.rinkeby": {
+      network_id: 4,
+      host: "localhost",
+      port: 8544,
+      skipDryRun: true,
+    },
     goerli: {
       provider: () =>
         new HDWalletProvider({

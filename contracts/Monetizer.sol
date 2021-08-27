@@ -2,96 +2,150 @@
 
 pragma solidity 0.8.7;
 
-import { ViewCountOracle } from "./ViewCountOracle.sol";
+// Import the UsingWitnet library that enables interacting with Witnet
+import "witnet-ethereum-bridge/contracts/UsingWitnet.sol";
+// Import the WitnetRequest contract that enables creating requests on the spot
+import "witnet-ethereum-bridge/contracts/requests/WitnetRequest.sol";
 
 /// Monetizer using the YouTube oracle
 /// @author Shronk
-contract Monetizer {
+contract Monetizer is UsingWitnet {
   // prettier-ignore
   struct Video {
     bool            notEmpty;
     string          id;
-    address         payer;
+    address depositor;
     address payable beneficiary;
     uint256         lockTime;
-    uint256         viewCount;
+    uint256         targetViewCount;
     uint256         amount;
-    ViewCountOracle oracle;
+    uint256         witnetQueryId;
   }
 
   mapping(string => Video) internal videos;
 
+  // Emits when someone is paid out
+  event Paid(string id);
+
+  // Emits when found an error decoding request result
+  event ResultError(string msg);
+
+  /// Check whether the video doesn't exist
+  modifier empty(string calldata _id) {
+    require(
+      !videos[_id].notEmpty, "Monetizer: there was already a deposit for this video"
+    );
+    _;
+  }
+  /// Check whether the video exists
+  modifier notEmpty(string calldata _id) {
+    require(
+      videos[_id].notEmpty, "Monetizer: the video doesn't exist"
+    );
+    _;
+  }
+
+  /// Check whether the beneficiary timelock has already expired
+  modifier timelockExpired(string calldata _id) {
+    require(
+      videos[_id].lockTime <= block.timestamp,
+      "Monetizer: the beneficiary timelock has not expired yet"
+    );
+    _;
+  }
+
+  /// Check whether the viewcount is currently being checked
+  modifier checked(string calldata _id) {
+    require(videos[_id].witnetQueryId > 0, "Monetizer: view count needs to be checked before withdrawing");
+    _;
+  }
+
+  /// Check whether the viewcount has not been checked yet
+  modifier notChecked(string calldata _id) {
+    require(videos[_id].witnetQueryId == 0, "Monetizer: view count was already being checked");
+    _;
+  }
+
+  /// Check whether there is a pending update
+  modifier notPending(string calldata _id) {
+    require(_witnetCheckResultAvailability(videos[_id].witnetQueryId), "Monetizer: view count is currently being checked");
+    _;
+  }
+
+  constructor (WitnetRequestBoard _wrb) UsingWitnet(_wrb) { }
+
   /// Deposit tokens into the contract
-  /// @param _id          the ID of the YouTube video
-  /// @param _beneficiary the address of the beneficiary
-  /// @param _lockTime    the time to lock
-  /// @param _viewCount   the viewcount that is required for the withdrawal
+  /// @param _id              the ID of the YouTube video
+  /// @param _beneficiary     the address of the beneficiary
+  /// @param _lockTime        the time to lock
+  /// @param _targetViewCount the viewcount that is required for the withdrawal
   // prettier-ignore
   function deposit(
     string calldata _id,
     address payable _beneficiary,
     uint256         _lockTime,
-    uint256         _viewCount
-  ) external payable {
+    uint256         _targetViewCount
+  ) external payable empty(_id) {
     videos[_id] = Video(
       true,
       _id,
       msg.sender,
       _beneficiary,
       _lockTime * (1 seconds) + block.timestamp,
-      _viewCount,
+      _targetViewCount,
       msg.value,
-      new ViewCountOracle(0x0C4be6AA667df48de54BA174bE7948875fdf152B, _id)
+      0
     );
   }
 
-  /// Check whether the video exists
-  modifier notEmpty(string calldata _id) {
-    require(
-      videos[_id].notEmpty, "The video doesn't exist"
-    );
-    _;
-  }
+  /// Sends a data request to Witnet so as to get an attestation of the current viewcount of a video
+  function checkViews(string calldata _id) external payable notEmpty(_id) timelockExpired(_id) notChecked(_id) {
+    WitnetRequest request = new WitnetRequest(bytes(abi.encodePacked(
+      hex"0a7a08cc9d9f8906124c123a68747470733a2f2f6170692d6d6964646c6577617265732e76657263656c2e6170702f6170692f796f75747562652f",
+      _id,
+      hex"1a0e83187782186765766965777318731a110a0d08051209fb3ff199999999999a100322110a0d08051209fb3ff199999999999a100310c0843d186420e80728333080c8afa025"
+    )));
 
-  /// Check whether the timelock has already expired
-  modifier timeLockExpired(string calldata _id) {
-    require(
-      videos[_id].lockTime <= block.timestamp,
-      "The timelock has not expired yet"
-    );
-    _;
-  }
-
-  /// Check whether there is a pending update
-  modifier notPending(string calldata _id) {
-    require(videos[_id].oracle.pending(), "There is a pending request");
-    _;
+    // Keerp track of the Witnet query ID
+    videos[_id].witnetQueryId = _witnetPostRequest(request);
   }
 
   /// Withdraw tokens from the contract
-  function withdraw(string calldata _id)
-  external notEmpty(_id) timeLockExpired(_id) notPending(_id) {
-    videos[_id].oracle.completeUpdate();
+  function withdraw(string calldata _id) external notEmpty(_id) timelockExpired(_id) checked(_id) notPending(_id) {
+    Witnet.Result memory result = _witnetReadResult(videos[_id].witnetQueryId);
 
-    // check whether the video has achieved the appropriate viewcount
-    if (videos[_id].viewCount > videos[_id].oracle.lastViewCount()) {
-      // send the tokens back to the payer
-      (bool sent1, ) = videos[_id].payer.call{ value: videos[_id].amount }("");
-      require(sent1, "Failed to send Ether to payer");
+    if (witnet.isOk(result)) {
+      // We got a valid view count!
+      uint64 viewCount = witnet.asUint64(result);
+      Video memory video = videos[_id];
+      // check whether the video has reached the target view count
+      if (viewCount >= video.targetViewCount) {
+        // if the target view count was reached, we can send the tokens to the beneficiary
+        (bool sent, ) = video.beneficiary.call{ value: video.amount }("");
+        require(sent, "Monetizer: failed to send Ether to creator");
+      } else {
+        // send the tokens back to the payer
+        (bool sent, ) = video.depositor.call{ value: video.amount }("");
+        require(sent, "Monetizer: failed to send Ether to payer");
+      }
+
+      emit Paid(_id);
+      delete videos[_id];
     } else {
-      // if the requirements are fullfilled we can send the tokens to
-      // the beneficiary
-      (bool sent2, ) = videos[_id].beneficiary.call{
-        value: videos[_id].amount
-      }("");
-      require(sent2, "Failed to send Ether to creator");
+      string memory errorMessage;
+
+      // Try to read the value as an error message, catch error bytes if read fails
+      try witnet.asErrorMessage(result) returns (Witnet.ErrorCodes, string memory e) {
+        errorMessage = e;
+      }
+      catch (bytes memory errorBytes){
+        errorMessage = string(errorBytes);
+      }
+
+      // The Witnet query failed. Set query ID to 0 so it can be retried using `checkViews()` again
+      videos[_id].witnetQueryId = 0;
+
+      emit ResultError(errorMessage);
     }
-
-    delete videos[_id];
-  }
-
-  function getOracleAddress(string calldata _id) external view notEmpty(_id)
-  returns(address) {
-    return address(videos[_id].oracle);
   }
 }

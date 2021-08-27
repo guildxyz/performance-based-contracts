@@ -1,25 +1,25 @@
 import * as Witnet from "witnet-requests";
 
 const youtube = new Witnet.Source(
-  "https://api-middlewares.vercel.app/api/youtube/{ID}"
+  "https://api-middlewares.vercel.app/api/youtube/___________"
 )
   .parseJSONMap()
   .getString("views")
   .asInteger();
 
-// Filters out any value that is more than 1.5 times the standard
+// Filters out any value that is more than 1.1 times the standard
 // deviation away from the average, then computes the average mean of the
 // values that pass the filter.
 const aggregator = new Witnet.Aggregator({
-  filters: [[Witnet.Types.FILTERS.deviationStandard, 1.5]],
+  filters: [[Witnet.Types.FILTERS.deviationStandard, 1.1]],
   reducer: Witnet.Types.REDUCERS.averageMean
 });
 
-// Filters out any value that is more than 1.5 times the standard
+// Filters out any value that is more than 1.1 times the standard
 // deviationaway from the average, then computes the average mean of the
 // values that pass the filter.
 const tally = new Witnet.Tally({
-  filters: [[Witnet.Types.FILTERS.deviationStandard, 1.5]],
+  filters: [[Witnet.Types.FILTERS.deviationStandard, 1.1]],
   reducer: Witnet.Types.REDUCERS.averageMean
 });
 
