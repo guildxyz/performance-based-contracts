@@ -36,12 +36,6 @@ module.exports = {
       provider: require("ganache-cli").provider({ gasLimit: 100000000 }),
       network_id: "*",
     },
-    "ethereum.rinkeby": {
-      network_id: 4,
-      host: "localhost",
-      port: 8544,
-      skipDryRun: true,
-    },
     goerli: {
       provider: () =>
         new HDWalletProvider({

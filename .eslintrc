@@ -12,6 +12,7 @@
     "assert": false,
     "web3": false
   },
+  "ignorePatterns": ["migrations/1_*", "migrations/2_*"],
   "rules": {
     "comma-dangle": ["error", {
       "arrays": "always-multiline",
