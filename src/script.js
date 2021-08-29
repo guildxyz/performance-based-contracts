@@ -5,7 +5,7 @@ let account;
 let localStorage;
 
 // Address of the YouTube monetizer contract
-const ADDRESS = "0xABc1c76bD7d16cF69B9c04B78C9c133ecD493a15";
+const ADDRESS = "0x983301a4B7D40409d0A7A5c2a73D349CB502A7C3";
 
 // Load artifacts
 const init = async () => {
@@ -15,7 +15,10 @@ const init = async () => {
   const video = _video !== null ? JSON.parse(_video) : {};
 
   if (video.lockTime !== undefined) {
-    setValue("youtube-url", `https://www.youtube.com/watch?v=${video.videoId}`);
+    setValue(
+      "youtube-url",
+      `https://www.youtube.com/watch?v=${video.videoId}`
+    );
     setValue("lock-time", video.lockTime);
     setValue("view-count", video.viewCount);
     setValue("money-amount", video.moneyAmount);
@@ -82,11 +85,11 @@ const deposit = async () => {
 
     // prettier-ignore
     const video = {
-      videoId            : parseUrl(parseInput("youtube-url")),
-      lockTime           :   Number(parseInput("lock-time")),
-      viewCount          :   Number(parseInput("view-count")),
-      moneyAmount        :          parseInput("money-amount"),
-      beneficiaryAddress :          parseInput("beneficiary-address"),
+      videoId           : parseUrl(parseInput("youtube-url")),
+      lockTime          :   Number(parseInput("lock-time")),
+      viewCount         :   Number(parseInput("view-count")),
+      moneyAmount       :          parseInput("money-amount"),
+      beneficiaryAddress:          parseInput("beneficiary-address"),
     }
 
     localStorage.setItem("current", JSON.stringify(video));
@@ -98,8 +101,6 @@ const deposit = async () => {
       video.lockTime,
       video.viewCount,
       {
-        gasLimit: 3000000,
-        gasPrice: ethers.utils.parseUnits("10.0", "gwei"),
         value: ethers.utils.parseEther(video.moneyAmount)
       }
     );
@@ -109,28 +110,14 @@ const deposit = async () => {
 };
 
 // Send an update request to the Witnet oracle
-const request = async () => {
+const check = async () => {
+  const videoId = parseUrl(parseInput("youtube-url"));
+
   try {
-    const contract = new ethers.Contract(
-      monetizer.getOracleAddress(parseUrl(parseInput("youtube-url"))),
-      viewCountAbi,
-      signer
-    );
-
-    if (!(await contract.pending())) {
-      await contract.requestUpdate({
-        gasLimit: 3000000,
-        gasPrice: ethers.utils.parseUnits("10.0", "gwei"),
-        value: ethers.utils.parseEther("0.00102496")
-      });
-    }
-
-    const lastViewCount = await contract.lastViewCount();
-    const lastRequestId = await contract.lastRequestId();
-
-    console.log(
-      `Last viewcount was ${lastViewCount}, last request was ${lastRequestId}`
-    );
+    await monetizer.checkViews(videoId, {
+      gasLimit: 3000000,
+      value: ethers.utils.parseEther("0.00102496")
+    });
   } catch (e) {
     alert(e);
   }

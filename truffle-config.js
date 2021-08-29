@@ -30,9 +30,9 @@ module.exports = {
    *
    * $ truffle test --network <network-name>
    */
-  contracts_directory: "./contracts/flattened/",
+  contracts_directory: "./contracts/",
   networks: {
-    goerli: {
+    "ethereum.goerli": {
       provider: () =>
         new HDWalletProvider({
           mnemonic: process.env.MNEMONICS,
