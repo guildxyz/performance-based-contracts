@@ -1,4 +1,3 @@
-let viewCountAbi;
 let monetizer;
 let signer;
 let account;
@@ -11,19 +10,7 @@ const ADDRESS = "0x983301a4B7D40409d0A7A5c2a73D349CB502A7C3";
 const init = async () => {
   localStorage = window.localStorage;
 
-  const _video = localStorage.getItem("current");
-  const video = _video !== null ? JSON.parse(_video) : {};
-
-  if (video.lockTime !== undefined) {
-    setValue(
-      "youtube-url",
-      `https://www.youtube.com/watch?v=${video.videoId}`
-    );
-    setValue("lock-time", video.lockTime);
-    setValue("view-count", video.viewCount);
-    setValue("money-amount", video.moneyAmount);
-    setValue("beneficiary-address", video.beneficiaryAddress);
-  }
+  initSpinner();
 
   if (typeof window.ethereum === "undefined") {
     alert("MetaMask is not installed!");
@@ -42,12 +29,39 @@ const init = async () => {
       .then(
         (data) => (monetizer = new ethers.Contract(ADDRESS, data.abi, signer))
       );
+  }
+};
 
-    fetch("./ViewCountOracle.json")
-      .then((response) => {
-        return response.json();
-      })
-      .then((data) => (viewCountAbi = data.abi));
+const initSpinner = () => {
+  let options = "";
+  const videos = JSON.parse(localStorage.getItem("videos"));
+  const length = videos !== null ? videos.length : 0;
+
+  // prettier-ignore
+  for (let i = 0; i < length; ++i) {
+    options += 
+    `<option value="${videos[i].videoId}">${videos[i].title}</option>`;
+  }
+
+  document.getElementById("spinner").innerHTML = options;
+};
+
+const loadFromSpinner = async () => {
+  const select = document.getElementById("spinner");
+  const videoId = select.options[select.selectedIndex].value;
+
+  const video = getVideo(videoId);
+
+  if (video.lockTime !== undefined) {
+    setValue(
+      "youtube-url",
+      `https://www.youtube.com/watch?v=${video.videoId}`
+    );
+    setValue("lock-time", video.lockTime);
+    setValue("view-count", video.viewCount);
+    setValue("money-amount", video.moneyAmount);
+    setValue("beneficiary-address", video.beneficiaryAddress);
+    updateStatus();
   }
 };
 
@@ -69,31 +83,27 @@ const setValue = (id, value) => (document.getElementById(id).value = value);
 
 const deposit = async () => {
   try {
-    let x = new XMLHttpRequest();
-    x.open(
-      "GET",
-      "https://cors-anywhere.herokuapp.com/" +
-        `https://api-middlewares.vercel.app/api/youtube/${parseUrl(
-          parseInput("youtube-url")
-        )}`
-    );
-    x.setRequestHeader("X-Requested-With", "XMLHttpRequest");
-    x.onload = function () {
-      console.log(JSON.parse(x.responseText).views);
-    };
-    x.send();
-
-    // prettier-ignore
     const video = {
-      videoId           : parseUrl(parseInput("youtube-url")),
-      lockTime          :   Number(parseInput("lock-time")),
-      viewCount         :   Number(parseInput("view-count")),
-      moneyAmount       :          parseInput("money-amount"),
-      beneficiaryAddress:          parseInput("beneficiary-address"),
-    }
+      title: (await getVideoStats(parseUrl(parseInput("youtube-url")))).title,
+      videoId: parseUrl(parseInput("youtube-url")),
+      lockTime: Number(parseInput("lock-time")),
+      viewCount: Number(parseInput("view-count")),
+      moneyAmount: parseInput("money-amount"),
+      beneficiaryAddress: parseInput("beneficiary-address"),
+      timeLeft: 0
+    };
 
-    localStorage.setItem("current", JSON.stringify(video));
-    localStorage.setItem("current-timestamp", new Date().getTime());
+    let t = new Date();
+    t.setSeconds(t.getSeconds() + video.lockTime);
+    video.timeLeft = t.getTime();
+
+    let _videos = JSON.parse(localStorage.getItem("videos"));
+    videos = _videos !== null ? _videos : [];
+    videos.push(video);
+
+    localStorage.setItem("videos", JSON.stringify(videos));
+
+    initSpinner();
 
     await monetizer.deposit(
       video.videoId,
@@ -101,11 +111,14 @@ const deposit = async () => {
       video.lockTime,
       video.viewCount,
       {
+        gasLimit: 3000000,
         value: ethers.utils.parseEther(video.moneyAmount)
       }
     );
+
+    updateStatus();
   } catch (e) {
-    alert(e);
+    console.log(e);
   }
 };
 
@@ -126,7 +139,22 @@ const check = async () => {
 // Withdraw the deposited money
 const withdraw = async () => {
   try {
-    await monetizer.withdraw(parseUrl(parseInput("youtube-url")));
+    const videoId = parseUrl(parseInput("youtube-url"));
+
+    let _videos = JSON.parse(localStorage.getItem("videos"));
+    videos = _videos !== null ? _videos : [];
+
+    for (let i = 0; i < videos.length; ++i) {
+      if (videos[i].videoId !== videoId) {
+        newVideos.push(videos[i]);
+      }
+    }
+
+    let newVideos = [];
+
+    localStorage.setItem("videos", JSON.stringify(newVideos));
+
+    await monetizer.withdraw(videoId);
   } catch (e) {
     alert(e);
   }
@@ -138,6 +166,34 @@ const clearData = async () => {
   setValue("view-count", "");
   setValue("money-amount", "");
   setValue("beneficiary-address", "");
+  document.getElementById("views").innerText = "";
+  document.getElementById("time-left").innerText = ""
 
   localStorage.removeItem("current");
+};
+
+const getVideo = (videoId) => {
+  return JSON.parse(localStorage.getItem("videos")).filter(
+    (vid) => vid.videoId === videoId
+  )[0];
+};
+
+const getVideoStats = async (videoId) => {
+  return (
+    await axios.get(
+      `https://api-middlewares.vercel.app/api/youtube/${videoId}`
+    )
+  ).data;
+};
+
+const updateStatus = async () => {
+  const videoId = parseUrl(parseInput("youtube-url"));
+  const views = (await getVideoStats(videoId)).views;
+  const timeLeft = getVideo(videoId).timeLeft - new Date().getTime();
+
+  document.getElementById("views").innerText = `Views: ${views}`;
+  document.getElementById("time-left").innerText =
+    timeLeft > 0
+      ? `Time left: ${Math.trunc(timeLeft / 1000)} seconds`
+      : 'You can hit "Check", then "Withdraw" after 7 minutes';
 };

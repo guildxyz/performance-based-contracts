@@ -8,6 +8,7 @@
   "scripts": {
     "postinstall": "chmod +x scripts/postinstall.sh && scripts/postinstall.sh",
     "compile-contracts": "npx truffle compile",
+    "compile-requests": "npx rad2sol --disable-requests-lists",
     "compile": "npm run postinstall && npm run compile-contracts",
     "flatten": "scripts/flatten.sh",
     "clean": "scripts/clean.sh",

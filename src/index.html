@@ -4,38 +4,62 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body onload="init()">
+    <div id="description">
+      <ol>
+        <li>choose an existing agreement or fill the form</li>
+        <li>deploy the agreement using deposit</li>
+        <li>wait until the timelock expires then hit check</li>
+        <li>wait another 7-10 minutes and you are ready to withdraw</li>
+      </ol>
+    </div>
+
+    <div id="chooser">
+      <select type="text" id="spinner" onchange="loadFromSpinner()"></select>
+      <button id="new" onclick="clearData()">New agreement</button>
+    </div>
+
     <div id="form">
       <div id="inputs">
         <div class="input-row">
           <label for="youtube-url">Video URL</label>
-          <input id="youtube-url" />
+          <input
+            id="youtube-url"
+            placeholder="https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+          />
         </div>
         <div class="input-row">
           <label for="view-count">Viewcount</label>
-          <input id="view-count" />
+          <input id="view-count" placeholder="0" />
         </div>
         <div class="input-row">
-          <label for="lock-time">Lock time</label>
-          <input id="lock-time" />
+          <label for="lock-time">Lock time (seconds)</label>
+          <input id="lock-time" placeholder="0" />
         </div>
         <div class="input-row">
-          <label for="money-amount">Amount to pay</label>
-          <input id="money-amount" />
+          <label for="money-amount">Amount to pay (ETH)</label>
+          <input id="money-amount" placeholder="0.0" />
         </div>
         <div class="input-row">
           <label for="beneficiary-address">Address of video owner</label>
-          <input id="beneficiary-address" />
+          <input
+            id="beneficiary-address"
+            placeholder="0x20CC54c7ebc54897152634839b4BD5c01BB23503"
+          />
         </div>
+        <p class="status" id="views"></p>
+        <p class="status" id="time-left"></p>
       </div>
       <div id="buttons">
         <button id="deposit" onclick="deposit()">Deposit</button>
         <button id="check" onclick="check()">Check</button>
         <button id="withdraw" onclick="withdraw()">Withdraw</button>
         <button id="clear" onclick="clearData()">Clear</button>
+        <button id="status" onclick="updateStatus()">Update status</button>
       </div>
     </div>
   </body>
 
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
   <script src="https://code.jquery.com/jquery-3.5.0.js"></script>
   <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js"></script>
   <script src="script.js"></script>

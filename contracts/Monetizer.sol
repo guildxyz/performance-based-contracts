@@ -38,6 +38,7 @@ contract Monetizer is UsingWitnet {
     );
     _;
   }
+
   /// Check whether the video exists
   modifier notEmpty(string calldata _id) {
     require(videos[_id].notEmpty, "Monetizer: the video doesn't exist");
@@ -124,7 +125,7 @@ contract Monetizer is UsingWitnet {
       )
     );
 
-    // Keerp track of the Witnet query ID
+    // Keep track of the Witnet query ID
     videos[_id].witnetQueryId = _witnetPostRequest(request);
   }
 
@@ -142,9 +143,11 @@ contract Monetizer is UsingWitnet {
       // We got a valid view count!
       uint64 viewCount = witnet.asUint64(result);
       Video memory video = videos[_id];
+
       // check whether the video has reached the target view count
       if (viewCount >= video.targetViewCount) {
-        // if the target view count was reached, we can send the tokens to the beneficiary
+        // if the target view count was reached, we can send the tokens to the
+        // beneficiary
         (bool sent, ) = video.beneficiary.call{value: video.amount}("");
         require(sent, "Monetizer: failed to send Ether to creator");
       } else {
@@ -158,7 +161,8 @@ contract Monetizer is UsingWitnet {
     } else {
       string memory errorMessage;
 
-      // Try to read the value as an error message, catch error bytes if read fails
+      // Try to read the value as an error message, catch error bytes if read
+      // fails
       try witnet.asErrorMessage(result) returns (
         Witnet.ErrorCodes,
         string memory e
@@ -168,7 +172,8 @@ contract Monetizer is UsingWitnet {
         errorMessage = string(errorBytes);
       }
 
-      // The Witnet query failed. Set query ID to 0 so it can be retried using `checkViews()` again
+      // The Witnet query failed. Set query ID to 0 so it can be retried using
+      // `checkViews()` again
       videos[_id].witnetQueryId = 0;
 
       emit ResultError(errorMessage);

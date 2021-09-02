@@ -25,11 +25,12 @@ const tally = new Witnet.Tally({
 
 // prettier-ignore
 const request = new Witnet.Request()
-  .addSource(youtube) // Use the source
-  .setQuorum(100) // Set witness count
-  .setAggregator(aggregator) // Set the aggregation script
-  .setTally(tally) // Set the tally script
-  .setFees(1000000, 1000) // Set economic incentives (e.g. reward: 1 mWit, fee: 1 uWit)
+  .addSource(youtube)         // Use the source
+  .setQuorum(100)             // Set witness count
+  .setAggregator(aggregator)  // Set the aggregation script
+  .setTally(tally)            // Set the tally script
+  .setFees(1000000, 1000)     // Set economic incentives (e.g. reward: 1 mWit,
+                              // fee: 1 uWit)
   .setCollateral(10000000000) // Set collateral (e.g. 10 Wit)
 
 export { request as default };
