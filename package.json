@@ -15,8 +15,7 @@
     "migrate": "scripts/migrate.sh && npm run verify",
     "verify": "npx truffle run verify --network goerli Monetizer",
     "test": "npx truffle test",
-    "copy-needed": "scripts/copy_needed.sh",
-    "host": "npm run copy-needed && npx live-server src"
+    "host": "npx live-server src"
   },
   "dependencies": {
     "@truffle/hdwallet-provider": "^1.4.0",
