@@ -37,13 +37,19 @@ const initSpinner = () => {
   const videos = JSON.parse(localStorage.getItem("videos"));
   const length = videos !== null ? videos.length : 0;
 
-  // prettier-ignore
-  for (let i = 0; i < length; ++i) {
+  if (length === 0) {
+    document.getElementById("spinner").style.display = "none";
+  } else {
+    document.getElementById("spinner").style.display = "inline";
+
+    // prettier-ignore
+    for (let i = 0; i < length; ++i) {
     options += 
     `<option value="${videos[i].videoId}">${videos[i].title}</option>`;
   }
 
-  document.getElementById("spinner").innerHTML = options;
+    document.getElementById("spinner").innerHTML = options;
+  }
 };
 
 const loadFromSpinner = async () => {
@@ -93,18 +99,6 @@ const deposit = async () => {
       timeLeft: 0
     };
 
-    let t = new Date();
-    t.setSeconds(t.getSeconds() + video.lockTime);
-    video.timeLeft = t.getTime();
-
-    let _videos = JSON.parse(localStorage.getItem("videos"));
-    videos = _videos !== null ? _videos : [];
-    videos.push(video);
-
-    localStorage.setItem("videos", JSON.stringify(videos));
-
-    initSpinner();
-
     await monetizer.deposit(
       video.videoId,
       video.beneficiaryAddress,
@@ -115,6 +109,18 @@ const deposit = async () => {
         value: ethers.utils.parseEther(video.moneyAmount)
       }
     );
+
+    let t = new Date();
+    t.setSeconds(t.getSeconds() + video.lockTime + 60);
+    video.timeLeft = t.getTime();
+
+    let _videos = JSON.parse(localStorage.getItem("videos"));
+    videos = _videos !== null ? _videos : [];
+    videos.push(video);
+
+    localStorage.setItem("videos", JSON.stringify(videos));
+
+    initSpinner();
 
     updateStatus();
   } catch (e) {
@@ -141,8 +147,12 @@ const withdraw = async () => {
   try {
     const videoId = parseUrl(parseInput("youtube-url"));
 
+    await monetizer.withdraw(videoId);
+
     let _videos = JSON.parse(localStorage.getItem("videos"));
     videos = _videos !== null ? _videos : [];
+
+    let newVideos = [];
 
     for (let i = 0; i < videos.length; ++i) {
       if (videos[i].videoId !== videoId) {
@@ -150,11 +160,9 @@ const withdraw = async () => {
       }
     }
 
-    let newVideos = [];
-
     localStorage.setItem("videos", JSON.stringify(newVideos));
 
-    await monetizer.withdraw(videoId);
+    initSpinner();
   } catch (e) {
     alert(e);
   }
@@ -167,7 +175,7 @@ const clearData = async () => {
   setValue("money-amount", "");
   setValue("beneficiary-address", "");
   document.getElementById("views").innerText = "";
-  document.getElementById("time-left").innerText = ""
+  document.getElementById("time-left").innerText = "";
 
   localStorage.removeItem("current");
 };
