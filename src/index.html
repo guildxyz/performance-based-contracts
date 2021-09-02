@@ -8,13 +8,28 @@
       <ol>
         <li>choose an existing agreement or fill the form</li>
         <li>deploy the agreement using deposit</li>
-        <li>wait until the timelock expires then hit check</li>
-        <li>wait another 7-10 minutes and you are ready to withdraw</li>
+        <li>
+          wait until the timelock expires (an extra minute is added to the
+          local counter)
+        </li>
+        <li>
+          hit the "Check" button and wait another 6-7 minutes for the request
+          to be processed by Witnet
+        </li>
+        <li>
+          if the video reached the given views the beneficiary gets the
+          deposited amount, otherwise the depositor gets back their tokens
+        </li>
       </ol>
     </div>
 
     <div id="chooser">
-      <select type="text" id="spinner" onclick="loadFromSpinner()" onchange="loadFromSpinner()"></select>
+      <select
+        type="text"
+        id="spinner"
+        onclick="loadFromSpinner()"
+        onchange="loadFromSpinner()"
+      ></select>
       <button id="new" onclick="clearData()">New agreement</button>
     </div>
 

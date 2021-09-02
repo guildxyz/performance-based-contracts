@@ -39,8 +39,10 @@ const initSpinner = () => {
 
   if (length === 0) {
     document.getElementById("spinner").style.display = "none";
+    document.getElementById("new").style.display = "none";
   } else {
     document.getElementById("spinner").style.display = "inline";
+    document.getElementById("new").style.display = "inline";
 
     // prettier-ignore
     for (let i = 0; i < length; ++i) {
