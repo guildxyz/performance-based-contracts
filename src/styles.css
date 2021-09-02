@@ -11,16 +11,18 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-direction: column;
 }
 
-#form {
+#form, #spinner, #new {
+  margin-top: 25px;
   padding: 10px;
   background-color: white;
   border: 1px solid black;
   transition: box-shadow 0.2s ease-in-out;
 }
 
-#form:hover {
+#form:hover, #spinner:hover, #new:hover {
   box-shadow: 15px 15px black;
   transition: box-shadow 0.2s ease-in-out;
 }
@@ -37,12 +39,17 @@ label {
   padding-right: 15px;
 }
 
-input {
-  width: 300px;
+input, select {
+  width: 555px;
   border: 1px solid black;
   outline: none;
   transition: box-shadow 0.2s ease-in-out;
   font-size: 1em;
+}
+
+.status {
+  margin: 0 0 0 30px;
+  padding: 0;
 }
 
 button {
@@ -64,7 +71,7 @@ button:hover {
   background-color: rgb(143, 212, 178);
 }
 
-#update:hover {
+#check:hover {
   background-color: rgb(207, 212, 143);
 }
 
