@@ -4,7 +4,7 @@ let account;
 let localStorage;
 
 // Address of the YouTube monetizer contract
-const ADDRESS = "0x983301a4B7D40409d0A7A5c2a73D349CB502A7C3";
+const ADDRESS = "0x05869c7c36AE96fb41c85F282c95D3626A69ff5A";
 
 // Load artifacts
 const init = async () => {
@@ -149,7 +149,7 @@ const withdraw = async () => {
   try {
     const videoId = parseUrl(parseInput("youtube-url"));
 
-    await monetizer.withdraw(videoId);
+    await monetizer.withdraw(videoId, { gasLimit: 3000000 });
 
     let _videos = JSON.parse(localStorage.getItem("videos"));
     videos = _videos !== null ? _videos : [];

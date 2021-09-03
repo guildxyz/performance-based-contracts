@@ -7,7 +7,7 @@ import "witnet-ethereum-bridge/contracts/UsingWitnet.sol";
 // Import the WitnetRequest contract that enables creating requests on the spot
 import "witnet-ethereum-bridge/contracts/requests/WitnetRequest.sol";
 
-/// Monetizer using the YouTube oracle
+/// @title YouTube monetizer using Witnet oracles
 /// @author Shronk, aesedepece
 contract Monetizer is UsingWitnet {
   // prettier-ignore
@@ -22,68 +22,39 @@ contract Monetizer is UsingWitnet {
     uint256         witnetQueryId;
   }
 
+  /// Map an agreement to an ID
   mapping(string => Video) internal videos;
 
-  // Emits when someone is paid out
+  /// Emits when someone is paid out
   event Paid(string id);
 
-  // Emits when found an error decoding request result
+  /// Emits when found an error decoding request result
   event ResultError(string msg);
 
-  /// Check whether the video doesn't exist
-  modifier empty(string calldata _id) {
-    require(
-      !videos[_id].notEmpty,
-      "Monetizer: there was already a deposit for this video"
-    );
-    _;
-  }
+  error AgreementIsEmpty();
+  error AgreementIsNotEmpty();
+  error TimeLockHasNotExpiredYet(uint256 expectedMinimum, uint256 current);
+  error ViewCountNotCheckedYet();
+  error ViewCountAlreadyChecked();
+  error PendingRequest();
+  error TransferFailed(address addr);
 
   /// Check whether the video exists
   modifier notEmpty(string calldata _id) {
-    require(videos[_id].notEmpty, "Monetizer: the video doesn't exist");
+    if (!videos[_id].notEmpty) revert AgreementIsEmpty();
     _;
   }
 
   /// Check whether the beneficiary timelock has already expired
   modifier timelockExpired(string calldata _id) {
-    require(
-      videos[_id].lockTime <= block.timestamp,
-      "Monetizer: the beneficiary timelock has not expired yet"
-    );
-    _;
-  }
-
-  /// Check whether the viewcount is currently being checked
-  modifier checked(string calldata _id) {
-    require(
-      videos[_id].witnetQueryId > 0,
-      "Monetizer: view count needs to be checked before withdrawing"
-    );
-    _;
-  }
-
-  /// Check whether the viewcount has not been checked yet
-  modifier notChecked(string calldata _id) {
-    require(
-      videos[_id].witnetQueryId == 0,
-      "Monetizer: view count was already being checked"
-    );
-    _;
-  }
-
-  /// Check whether there is a pending update
-  modifier notPending(string calldata _id) {
-    require(
-      _witnetCheckResultAvailability(videos[_id].witnetQueryId),
-      "Monetizer: view count is currently being checked"
-    );
+    if (videos[_id].lockTime > block.timestamp)
+      revert TimeLockHasNotExpiredYet(videos[_id].lockTime, block.timestamp);
     _;
   }
 
   constructor(WitnetRequestBoard _wrb) UsingWitnet(_wrb) {}
 
-  /// Deposit tokens into the contract
+  /// @notice Deposit tokens into the contract
   /// @param _id              the ID of the YouTube video
   /// @param _beneficiary     the address of the beneficiary
   /// @param _lockTime        the time to lock
@@ -94,7 +65,10 @@ contract Monetizer is UsingWitnet {
     address payable _beneficiary,
     uint256         _lockTime,
     uint256         _targetViewCount
-  ) external payable empty(_id) {
+  ) external payable {
+    // Check whether the agreement is empty or not
+    if (videos[_id].notEmpty) revert AgreementIsNotEmpty();
+
     videos[_id] = Video(
       true,
       _id,
@@ -107,14 +81,17 @@ contract Monetizer is UsingWitnet {
     );
   }
 
-  /// Sends a data request to Witnet so as to get an attestation of the current viewcount of a video
+  /// @notice Send a data request to Witnet so as to get an attestation of the
+  /// current viewcount of a video
   function checkViews(string calldata _id)
     external
     payable
     notEmpty(_id)
     timelockExpired(_id)
-    notChecked(_id)
   {
+    // Check whether the viewcount has been checked
+    if (videos[_id].witnetQueryId > 0) revert ViewCountAlreadyChecked();
+
     WitnetRequest request = new WitnetRequest(
       bytes(
         abi.encodePacked(
@@ -129,14 +106,18 @@ contract Monetizer is UsingWitnet {
     videos[_id].witnetQueryId = _witnetPostRequest(request);
   }
 
-  /// Withdraw tokens from the contract
+  /// @notice Withdraw tokens from the contract
   function withdraw(string calldata _id)
     external
     notEmpty(_id)
     timelockExpired(_id)
-    checked(_id)
-    notPending(_id)
   {
+    // Check whether the viewcount has not been checked yet
+    if (videos[_id].witnetQueryId == 0) revert ViewCountNotCheckedYet();
+
+    if (!_witnetCheckResultAvailability(videos[_id].witnetQueryId))
+      revert PendingRequest();
+
     Witnet.Result memory result = _witnetReadResult(videos[_id].witnetQueryId);
 
     if (witnet.isOk(result)) {
@@ -149,11 +130,11 @@ contract Monetizer is UsingWitnet {
         // if the target view count was reached, we can send the tokens to the
         // beneficiary
         (bool sent, ) = video.beneficiary.call{value: video.amount}("");
-        require(sent, "Monetizer: failed to send Ether to creator");
+        if (!sent) revert TransferFailed(video.beneficiary);
       } else {
         // send the tokens back to the payer
         (bool sent, ) = video.depositor.call{value: video.amount}("");
-        require(sent, "Monetizer: failed to send Ether to payer");
+        if (!sent) revert TransferFailed(video.depositor);
       }
 
       emit Paid(_id);

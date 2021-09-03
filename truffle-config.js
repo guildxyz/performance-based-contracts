@@ -30,7 +30,7 @@ module.exports = {
    *
    * $ truffle test --network <network-name>
    */
-  contracts_directory: "./contracts/",
+  contracts_directory: "./contracts/flattened",
   networks: {
     "ethereum.goerli": {
       provider: () =>
