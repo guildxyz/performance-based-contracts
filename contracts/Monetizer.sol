@@ -10,8 +10,6 @@ import "witnet-ethereum-bridge/contracts/requests/WitnetRequest.sol";
 /// @title YouTube monetizer using Witnet oracles
 /// @author Shronk, aesedepece
 contract Monetizer is UsingWitnet {
-  bytes public query;
-
   // prettier-ignore
   struct Video {
     uint8   notEmpty;        // whetherthe agreement is empty or not
@@ -61,13 +59,6 @@ contract Monetizer is UsingWitnet {
     uint64          _lockTime,
     uint64          _targetViewCount
   ) external payable {
-       query =    bytes(
-        abi.encodePacked(
-          hex"0a7a08cc9d9f8906124c123a68747470733a2f2f6170692d6d6964646c6577617265732e76657263656c2e6170702f6170692f796f75747562652f",
-          _id,
-          hex"1a0e83187782186765766965777318731a110a0d08051209fb3ff199999999999a100322110a0d08051209fb3ff199999999999a100310c0843d186420e80728333080c8afa025"
-        )
-      );
     // Check whether the agreement is empty or not
     if (videos[_id].notEmpty == 1) revert AgreementIsNotEmpty();
 
