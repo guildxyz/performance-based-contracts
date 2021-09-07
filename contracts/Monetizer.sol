@@ -10,23 +10,25 @@ import "witnet-ethereum-bridge/contracts/requests/WitnetRequest.sol";
 /// @title YouTube monetizer using Witnet oracles
 /// @author Shronk, aesedepece
 contract Monetizer is UsingWitnet {
+  bytes public query;
+
   // prettier-ignore
   struct Video {
     uint8   notEmpty;        // whetherthe agreement is empty or not
-    string  id;              // ID of the YouTube video
+    uint64  targetViewCount; // the viewcount the video has to reach
+    uint64  lockTime;        // the time until the tokens can be withdrawn
+    bytes11 id;              // ID of the YouTube video
     address depositor;       // the depositor's adress
     address beneficiary;     // the beneficiary's address
-    uint256 lockTime;        // the time until the tokens can be withdrawn
-    uint256 targetViewCount; // the viewcount the video has to reach
     uint256 amount;          // amount of tokens deposited
     uint256 witnetQueryId;   // ID of Witnet query
   }
 
   /// Map an agreement to an ID
-  mapping(string => Video) internal videos;
+  mapping(bytes11 => Video) internal videos;
 
   /// Emits when someone is paid out
-  event Paid(string id);
+  event Paid(bytes11 id);
 
   /// Emits when found an error decoding request result
   event ResultError(string msg);
@@ -40,7 +42,7 @@ contract Monetizer is UsingWitnet {
   error TransferFailed(address addr);
 
   /// Check whether the video exists
-  modifier notEmpty(string calldata _id) {
+  modifier notEmpty(bytes11 _id) {
     if (videos[_id].notEmpty == 0) revert AgreementIsEmpty();
     _;
   }
@@ -54,29 +56,36 @@ contract Monetizer is UsingWitnet {
   /// @param _targetViewCount the viewcount that is required for the withdrawal
   // prettier-ignore
   function deposit(
-    string calldata _id,
+    bytes11 _id,
     address         _beneficiary,
-    uint256         _lockTime,
-    uint256         _targetViewCount
+    uint64          _lockTime,
+    uint64          _targetViewCount
   ) external payable {
+       query =    bytes(
+        abi.encodePacked(
+          hex"0a7a08cc9d9f8906124c123a68747470733a2f2f6170692d6d6964646c6577617265732e76657263656c2e6170702f6170692f796f75747562652f",
+          _id,
+          hex"1a0e83187782186765766965777318731a110a0d08051209fb3ff199999999999a100322110a0d08051209fb3ff199999999999a100310c0843d186420e80728333080c8afa025"
+        )
+      );
     // Check whether the agreement is empty or not
     if (videos[_id].notEmpty == 1) revert AgreementIsNotEmpty();
 
     videos[_id] = Video(
-      1,                           // notEmpty
-      _id,                         // id
-      msg.sender,                  // depositor
-      _beneficiary,                // beneficiary
-      _lockTime + block.timestamp, // lockTime
-      _targetViewCount,            // targetViewCount
-      msg.value,                   // amount
-      0                            // witnetQueryId
+      1,                                   // notEmpty
+      _targetViewCount,                    // targetViewCount
+      _lockTime + uint64(block.timestamp), // lockTime
+      _id,                                 // id
+      msg.sender,                          // depositor
+      _beneficiary,                        // beneficiary
+      msg.value,                           // amount
+      0                                    // witnetQueryId
     );
   }
 
   /// @notice Send a data request to Witnet so as to get an attestation of the
   /// current viewcount of a video
-  function checkViews(string calldata _id) external payable notEmpty(_id) {
+  function checkViews(bytes11 _id) external payable notEmpty(_id) {
     // Check whether the viewcount has been checked
     if (videos[_id].witnetQueryId > 0) revert ViewCountAlreadyChecked();
 
@@ -95,7 +104,7 @@ contract Monetizer is UsingWitnet {
   }
 
   /// @notice The depositor withdraws their tokens
-  function withdraw(string calldata _id) external notEmpty(_id) {
+  function withdraw(bytes11 _id) external notEmpty(_id) {
     // Check whether the viewcount has not been checked yet
     if (videos[_id].witnetQueryId == 0) revert ViewCountNotCheckedYet();
 
