@@ -35,7 +35,7 @@ module.exports = {
     "ethereum.goerli": {
       provider: () =>
         new HDWalletProvider({
-          mnemonic: process.env.MNEMONICS,
+          privateKeys: [ process.env.PRIVATE_KEY ],
           providerOrUrl: `wss://goerli.infura.io/ws/v3/${process.env.INFURA_API_KEY}`,
           chainId: 5
         }),

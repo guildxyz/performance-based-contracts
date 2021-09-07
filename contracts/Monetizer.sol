@@ -12,14 +12,14 @@ import "witnet-ethereum-bridge/contracts/requests/WitnetRequest.sol";
 contract Monetizer is UsingWitnet {
   // prettier-ignore
   struct Video {
-    bool            notEmpty;
-    string          id;
-    address         depositor;
-    address payable beneficiary;
-    uint256         lockTime;
-    uint256         targetViewCount;
-    uint256         amount;
-    uint256         witnetQueryId;
+    uint8   notEmpty;        // whetherthe agreement is empty or not
+    string  id;              // ID of the YouTube video
+    address depositor;       // the depositor's adress
+    address beneficiary;     // the beneficiary's address
+    uint256 lockTime;        // the time until the tokens can be withdrawn
+    uint256 targetViewCount; // the viewcount the video has to reach
+    uint256 amount;          // amount of tokens deposited
+    uint256 witnetQueryId;   // ID of Witnet query
   }
 
   /// Map an agreement to an ID
@@ -41,14 +41,7 @@ contract Monetizer is UsingWitnet {
 
   /// Check whether the video exists
   modifier notEmpty(string calldata _id) {
-    if (!videos[_id].notEmpty) revert AgreementIsEmpty();
-    _;
-  }
-
-  /// Check whether the beneficiary timelock has already expired
-  modifier timelockExpired(string calldata _id) {
-    if (videos[_id].lockTime > block.timestamp)
-      revert TimeLockHasNotExpiredYet(videos[_id].lockTime, block.timestamp);
+    if (videos[_id].notEmpty == 0) revert AgreementIsEmpty();
     _;
   }
 
@@ -62,33 +55,28 @@ contract Monetizer is UsingWitnet {
   // prettier-ignore
   function deposit(
     string calldata _id,
-    address payable _beneficiary,
+    address         _beneficiary,
     uint256         _lockTime,
     uint256         _targetViewCount
   ) external payable {
     // Check whether the agreement is empty or not
-    if (videos[_id].notEmpty) revert AgreementIsNotEmpty();
+    if (videos[_id].notEmpty == 1) revert AgreementIsNotEmpty();
 
     videos[_id] = Video(
-      true,
-      _id,
-      msg.sender,
-      _beneficiary,
-      _lockTime * (1 seconds) + block.timestamp,
-      _targetViewCount,
-      msg.value,
-      0
+      1,                           // notEmpty
+      _id,                         // id
+      msg.sender,                  // depositor
+      _beneficiary,                // beneficiary
+      _lockTime + block.timestamp, // lockTime
+      _targetViewCount,            // targetViewCount
+      msg.value,                   // amount
+      0                            // witnetQueryId
     );
   }
 
   /// @notice Send a data request to Witnet so as to get an attestation of the
   /// current viewcount of a video
-  function checkViews(string calldata _id)
-    external
-    payable
-    notEmpty(_id)
-    timelockExpired(_id)
-  {
+  function checkViews(string calldata _id) external payable notEmpty(_id) {
     // Check whether the viewcount has been checked
     if (videos[_id].witnetQueryId > 0) revert ViewCountAlreadyChecked();
 
@@ -106,12 +94,8 @@ contract Monetizer is UsingWitnet {
     videos[_id].witnetQueryId = _witnetPostRequest(request);
   }
 
-  /// @notice Withdraw tokens from the contract
-  function withdraw(string calldata _id)
-    external
-    notEmpty(_id)
-    timelockExpired(_id)
-  {
+  /// @notice The depositor withdraws their tokens
+  function withdraw(string calldata _id) external notEmpty(_id) {
     // Check whether the viewcount has not been checked yet
     if (videos[_id].witnetQueryId == 0) revert ViewCountNotCheckedYet();
 
@@ -125,14 +109,21 @@ contract Monetizer is UsingWitnet {
       uint64 viewCount = witnet.asUint64(result);
       Video memory video = videos[_id];
 
-      // check whether the video has reached the target view count
+      // Check whether the video has reached the target view count
       if (viewCount >= video.targetViewCount) {
-        // if the target view count was reached, we can send the tokens to the
+        // If the target view count was reached, we can send the tokens to the
         // beneficiary
         (bool sent, ) = video.beneficiary.call{value: video.amount}("");
         if (!sent) revert TransferFailed(video.beneficiary);
       } else {
-        // send the tokens back to the payer
+        // check whether the timelock has expired
+        if (videos[_id].lockTime > block.timestamp)
+          revert TimeLockHasNotExpiredYet(
+            videos[_id].lockTime,
+            block.timestamp
+          );
+
+        // Send the tokens back to the depositor
         (bool sent, ) = video.depositor.call{value: video.amount}("");
         if (!sent) revert TransferFailed(video.depositor);
       }

@@ -4,7 +4,7 @@ let account;
 let localStorage;
 
 // Address of the YouTube monetizer contract
-const ADDRESS = "0x05869c7c36AE96fb41c85F282c95D3626A69ff5A";
+const ADDRESS = "0xF4C859C0D368167eA820FFF9444662Dee9DF3186";
 
 // Load artifacts
 const init = async () => {
