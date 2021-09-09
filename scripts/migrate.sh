@@ -1,4 +1,4 @@
 #!/bin/bash
 
-npx truffle migrate --reset --network=goerli Monetizer
+npx truffle migrate --reset --network=ethereum.goerli Monetizer
 sleep 10

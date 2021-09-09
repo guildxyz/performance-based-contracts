@@ -13,7 +13,7 @@
     "flatten": "scripts/flatten.sh",
     "clean": "scripts/clean.sh",
     "migrate": "scripts/migrate.sh && npm run verify",
-    "verify": "npx truffle run verify --network goerli Monetizer",
+    "verify": "npx truffle run verify --network ethereum.goerli Monetizer",
     "test": "npx truffle test",
     "host": "npx live-server src"
   },
