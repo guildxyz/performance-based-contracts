@@ -55,9 +55,9 @@ contract Monetizer is UsingWitnet {
   // prettier-ignore
   function deposit(
     bytes11 _id,
-    address         _beneficiary,
-    uint64          _lockTime,
-    uint64          _targetViewCount
+    address _beneficiary,
+    uint64  _lockTime,
+    uint64  _targetViewCount
   ) external payable {
     // Check whether the agreement is empty or not
     if (videos[_id].notEmpty == 1) revert AgreementIsNotEmpty();

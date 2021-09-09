@@ -4,7 +4,7 @@ let account;
 let localStorage;
 
 // Address of the YouTube monetizer contract
-const ADDRESS = "0xF4C859C0D368167eA820FFF9444662Dee9DF3186";
+const ADDRESS = "0x52b61578Df7af83c8089fFd7907C0556eeE9FD21";
 
 // Load artifacts
 const init = async () => {
@@ -73,6 +73,16 @@ const loadFromSpinner = async () => {
   }
 };
 
+const toHex = (str) => {
+  var result = "0x";
+
+  for (var i = 0; i < str.length; i++) {
+    result += str.charCodeAt(i).toString(16);
+  }
+
+  return result;
+};
+
 /**
  * Helper function for getting the ID of a YouTube video from a URL
  * Source: https://stackoverflow.com/a/8260383/5596516
@@ -102,13 +112,12 @@ const deposit = async () => {
     };
 
     await monetizer.deposit(
-      video.videoId,
+      toHex(video.videoId),
       video.beneficiaryAddress,
       video.lockTime,
       video.viewCount,
       {
-        gasLimit: 3000000,
-        value: ethers.utils.parseEther(video.moneyAmount)
+        value: ethers.utils.parseEther("0.001")
       }
     );
 
@@ -135,7 +144,7 @@ const check = async () => {
   const videoId = parseUrl(parseInput("youtube-url"));
 
   try {
-    await monetizer.checkViews(videoId, {
+    await monetizer.checkViews(toHex(videoId), {
       gasLimit: 3000000,
       value: ethers.utils.parseEther("0.00102496")
     });
@@ -149,7 +158,7 @@ const withdraw = async () => {
   try {
     const videoId = parseUrl(parseInput("youtube-url"));
 
-    await monetizer.withdraw(videoId, { gasLimit: 3000000 });
+    await monetizer.withdraw(toHex(videoId));
 
     let _videos = JSON.parse(localStorage.getItem("videos"));
     videos = _videos !== null ? _videos : [];
