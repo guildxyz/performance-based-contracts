@@ -30,12 +30,12 @@ module.exports = {
    *
    * $ truffle test --network <network-name>
    */
-  contracts_directory: "./contracts/flattened",
+  contracts_directory: "./contracts",
   networks: {
     "ethereum.goerli": {
       provider: () =>
         new HDWalletProvider({
-          privateKeys: [ process.env.PRIVATE_KEY ],
+          privateKeys: [process.env.PRIVATE_KEY],
           providerOrUrl: `wss://goerli.infura.io/ws/v3/${process.env.INFURA_API_KEY}`,
           chainId: 5
         }),
