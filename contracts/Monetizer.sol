@@ -12,7 +12,7 @@ import "witnet-ethereum-bridge/contracts/requests/WitnetRequest.sol";
 contract Monetizer is UsingWitnet {
   // prettier-ignore
   struct Video {
-    uint8   notEmpty;        // whetherthe agreement is empty or not
+    uint8   notEmpty;        // whether the agreement is empty or not
     uint64  targetViewCount; // the viewcount the video has to reach
     uint64  lockTime;        // the time until the tokens can be withdrawn
     bytes11 id;              // ID of the YouTube video
