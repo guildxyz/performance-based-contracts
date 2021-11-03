@@ -9,4 +9,6 @@ const Monetizer = artifacts.require("Monetizer")
 module.exports = async function (deployer) {
   await deployer.link(WitnetParserLib, [Monetizer])
   await deployer.deploy(Monetizer, WitnetProxy.address)
+  const monetizer = await Monetizer.deployed()
+  await monetizer.initialize()
 }

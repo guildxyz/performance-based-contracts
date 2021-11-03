@@ -21,7 +21,8 @@
     "live-server": "^1.2.1",
     "prettier": "^2.3.2",
     "witnet-ethereum-bridge": "^0.4.2",
-    "witnet-requests": "^0.5.2"
+    "witnet-requests": "^0.7.0",
+    "witnet-solidity-bridge": "^0.5.1"
   },
   "devDependencies": {
     "dotenv": "^8.2.0",

@@ -3,9 +3,9 @@
 pragma solidity 0.8.9;
 
 // Import the UsingWitnet library that enables interacting with Witnet
-import "witnet-ethereum-bridge/contracts/UsingWitnet.sol";
+import "witnet-solidity-bridge/contracts/UsingWitnet.sol";
 // Import the WitnetRequest contract that enables creating requests on the spot
-import "witnet-ethereum-bridge/contracts/requests/WitnetRequest.sol";
+import "witnet-solidity-bridge/contracts/requests/WitnetRequest.sol";
 
 /// @title YouTube monetizer using Witnet oracles
 /// @author Shronk, aesedepece
@@ -47,6 +47,9 @@ contract Monetizer is UsingWitnet {
 
   constructor(WitnetRequestBoard _wrb) UsingWitnet(_wrb) {}
 
+  /// Disgusting workaround
+  function initialize() external view {}
+
   /// @notice Deposit tokens into the contract
   /// @param _id              the ID of the YouTube video
   /// @param _beneficiary     the address of the beneficiary
@@ -83,7 +86,7 @@ contract Monetizer is UsingWitnet {
     WitnetRequest request = new WitnetRequest(
       bytes(
         abi.encodePacked(
-          hex"0a7a08cc9d9f8906124c123a68747470733a2f2f6170692d6d6964646c6577617265732e76657263656c2e6170702f6170692f796f75747562652f",
+          hex"0a76124e0801123a68747470733a2f2f6170692d6d6964646c6577617265732e76657263656c2e6170702f6170692f796f75747562652f",
           _id,
           hex"1a0e83187782186765766965777318731a110a0d08051209fb3ff199999999999a100322110a0d08051209fb3ff199999999999a100310c0843d186420e80728333080c8afa025"
         )
@@ -91,7 +94,7 @@ contract Monetizer is UsingWitnet {
     );
 
     // Keep track of the Witnet query ID
-    videos[_id].witnetQueryId = _witnetPostRequest(request);
+    (videos[_id].witnetQueryId, ) = _witnetPostRequest(request);
   }
 
   /// @notice The depositor withdraws their tokens
